@@ -1,4 +1,4 @@
-
+import './App.css';
 import { useState } from "react";
 import { texts } from "./i18n";
 
