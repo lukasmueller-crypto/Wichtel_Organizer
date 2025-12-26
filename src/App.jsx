@@ -1,119 +1,82 @@
+import React, { useState } from 'react';
 import './App.css';
-import { useState } from "react";
-import { texts } from "./i18n";
 
-export default function App() {
-  const [lang, setLang] = useState("de");
-  const T = texts[lang];
-
+function App() {
   const [participants, setParticipants] = useState([]);
-  const [nameInput, setNameInput] = useState("");
-  const [emailInput, setEmailInput] = useState("");
-  const [wishlistInput, setWishlistInput] = useState("");
-  const [exclusionInput, setExclusionInput] = useState([]);
+  const [inputName, setInputName] = useState('');
+  const [assignments, setAssignments] = useState([]);
 
-  const toggleLang = () => setLang(lang === "de" ? "en" : "de");
-
+  // Teilnehmer hinzufügen
   const addParticipant = () => {
-    if (!nameInput || !emailInput) return;
-    setParticipants([
-      ...participants,
-      {
-        id: Date.now(),
-        name: nameInput,
-        email: emailInput,
-        wishlist: wishlistInput,
-        excluded: exclusionInput,
-      },
-    ]);
-    setNameInput("");
-    setEmailInput("");
-    setWishlistInput("");
-    setExclusionInput([]);
-  };
-
-  const toggleExclusion = (name) => {
-    setExclusionInput((prev) =>
-      prev.includes(name) ? prev.filter((x) => x !== name) : [...prev, name]
-    );
-  };
-
-  const shuffleAssignments = () => {
-    const n = participants.length;
-    if (n < 2) return alert("Mindestens 2 Teilnehmer erforderlich.");
-
-    let assignment = null;
-    let attempts = 0;
-
-    while (!assignment && attempts < 5000) {
-      attempts++;
-
-      let ring = [...participants].sort(() => Math.random() - 0.5);
-
-      let valid = true;
-      let pairings = [];
-
-      for (let i = 0; i < n; i++) {
-        const giver = ring[i];
-        const receiver = ring[(i + 1) % n];
-
-        if (giver.id === receiver.id) {
-          valid = false;
-          break;
-        }
-        if (giver.excluded.includes(receiver.name)) {
-          valid = false;
-          break;
-        }
-        pairings.push({ giver, receiver });
-      }
-
-      if (valid) assignment = pairings;
+    if (inputName.trim() && !participants.includes(inputName.trim())) {
+      setParticipants([...participants, inputName.trim()]);
+      setInputName('');
     }
+  };
 
-    if (!assignment)
-      return alert("Kein gültiger Kreis möglich – Ausschlüsse prüfen.");
+  // Wichtel-Zuordnung (keine Kreise)
+  const assignGifts = () => {
+    if (participants.length < 2) return;
 
-    console.log("Assignments:", assignment);
-    alert("Großer Kreis erfolgreich erstellt!");
+    const names = [...participants];
+    const shuffled = [...names].sort(() => Math.random() - 0.5);
+
+    const result = shuffled.map((name, index) => ({
+      giver: name,
+      receiver: shuffled[(index + 1) % shuffled.length],
+    }));
+
+    setAssignments(result);
   };
 
   return (
-    <div style={{ padding: 20, fontFamily: "Arial" }}>
-      <button onClick={toggleLang}>
-        {lang === "de" ? "EN" : "DE"}
+    <div className="app-container">
+      <header className="header">
+        <h1>🎁 Wichtel Organizer</h1>
+      </header>
+
+      <div className="person-card">
+        <h3>Teilnehmer hinzufügen</h3>
+        <input
+          type="text"
+          value={inputName}
+          placeholder="Name eingeben"
+          onChange={(e) => setInputName(e.target.value)}
+        />
+        <button onClick={addParticipant} disabled={!inputName.trim()}>
+          Hinzufügen
+        </button>
+      </div>
+
+      <div className="person-card">
+        <h3>Teilnehmerliste</h3>
+        {participants.length === 0 && <p>Keine Teilnehmer bisher.</p>}
+        <ul>
+          {participants.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      </div>
+
+      <button onClick={assignGifts} disabled={participants.length < 2}>
+        Wichtel zuweisen
       </button>
 
-      <h1>{T.title}</h1>
-
-      <h2>{T.addParticipant}</h2>
-      <input placeholder={T.name} value={nameInput} onChange={(e)=>setNameInput(e.target.value)}/>
-      <input placeholder={T.email} value={emailInput} onChange={(e)=>setEmailInput(e.target.value)}/>
-      <textarea placeholder={T.wishlist} value={wishlistInput} onChange={(e)=>setWishlistInput(e.target.value)} />
-
-      {participants.length > 0 && (
-        <div>
-          <p>{T.exclusions}:</p>
-          {participants.map((p)=>(
-            <button key={p.id} onClick={()=>toggleExclusion(p.name)}>
-              {p.name}{exclusionInput.includes(p.name)?" ❌":""}
-            </button>
-          ))}
+      {assignments.length > 0 && (
+        <div className="result-box">
+          <h3>Wichtel-Zuordnung</h3>
+          <ul>
+            {assignments.map((a, i) => (
+              <li key={i}>
+                <span className="gift-icon">🎁</span>
+                {a.giver} → {a.receiver}
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
-
-      <button onClick={addParticipant}>{T.add}</button>
-
-      <h2>{T.list}</h2>
-      <ul>
-        {participants.map((p)=>(
-          <li key={p.id}>{p.name} – {p.email}</li>
-        ))}
-      </ul>
-
-      {participants.length > 1 && (
-        <button onClick={shuffleAssignments}>{T.assign}</button>
       )}
     </div>
   );
 }
+
+export default App;
