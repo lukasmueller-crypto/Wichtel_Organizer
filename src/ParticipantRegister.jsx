@@ -1,0 +1,1 @@
+export default function ParticipantRegister(){return <div>Register</div>;}
